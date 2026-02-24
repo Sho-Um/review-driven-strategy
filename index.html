@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>美容クリニック競合NLP分析 — ネガティブ口コミの構造解析と戦略的改善施策</title>
+<title>美容クリニック競合NLP分析レポート — 戦略的改善施策</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -30,8 +30,9 @@
   --sans: 'Noto Sans JP', sans-serif;
   --mono: 'IBM Plex Mono', monospace;
   --glow-cyan: 0 0 40px rgba(0,212,170,0.15);
-  --glow-rose: 0 0 40px rgba(255,77,106,0.1);
+  --container-width: 1100px;
 }
+
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 html { scroll-behavior: smooth; font-size: 16px; }
 body {
@@ -43,1436 +44,517 @@ body {
   overflow-x: hidden;
 }
 
-/* --- Scrollbar --- */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-primary); }
-::-webkit-scrollbar-thumb { background: rgba(0,212,170,0.3); border-radius:3px; }
-
-/* --- Noise Overlay --- */
-body::before {
-  content: '';
-  position: fixed; inset:0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 9999;
-}
-
-/* --- Grid Lines Background --- */
-.grid-bg {
-  position: fixed; inset:0;
-  background-image:
-    linear-gradient(rgba(0,212,170,0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,212,170,0.02) 1px, transparent 1px);
-  background-size: 60px 60px;
-  pointer-events: none;
-  z-index: -1;
-}
-
 /* --- Navigation --- */
 nav {
   position: fixed; top:0; left:0; right:0;
-  z-index: 100;
+  z-index: 1000;
   background: rgba(10,10,15,0.85);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
-  padding: 0 2rem;
-  transition: transform 0.3s;
 }
 nav .nav-inner {
-  max-width: 1400px; margin:0 auto;
+  max-width: var(--container-width);
+  margin: 0 auto;
+  padding: 0 2rem;
   display: flex; align-items: center; justify-content: space-between;
-  height: 60px;
+  height: 70px;
 }
 nav .nav-logo {
   font-family: var(--mono);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   letter-spacing: 0.15em;
   color: var(--accent-cyan);
   text-transform: uppercase;
 }
-nav .nav-links { display:flex; gap:2rem; list-style:none; }
+nav .nav-links { display: flex; gap: 2rem; list-style: none; }
 nav .nav-links a {
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
+  font-size: 0.7rem;
   color: var(--text-secondary);
   text-decoration: none;
   text-transform: uppercase;
   transition: color 0.3s;
-  position: relative;
-}
-nav .nav-links a::after {
-  content: '';
-  position: absolute; bottom:-4px; left:0;
-  width: 0; height: 1px;
-  background: var(--accent-cyan);
-  transition: width 0.3s;
+  letter-spacing: 0.05em;
 }
 nav .nav-links a:hover { color: var(--accent-cyan); }
-nav .nav-links a:hover::after { width: 100%; }
+
+.menu-toggle {
+  display: none; background: none; border: none; cursor: pointer; padding: 0.5rem; z-index: 1100;
+}
+.menu-toggle span { display: block; width: 22px; height: 1px; background: var(--accent-cyan); margin: 6px 0; transition: 0.3s; }
+
+@media (max-width: 1100px) {
+  .menu-toggle { display: block; }
+  nav .nav-links {
+    position: fixed; top: 0; right: -100%;
+    width: 300px; height: 100vh;
+    background: var(--bg-secondary);
+    flex-direction: column;
+    padding: 100px 3rem;
+    transition: 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    border-left: 1px solid var(--border);
+    gap: 1.5rem;
+  }
+  nav .nav-links.open { right: 0; }
+}
 
 /* --- Hero --- */
 .hero {
-  min-height: 100vh;
+  min-height: 90vh;
   display: flex; flex-direction: column;
   justify-content: center; align-items: center;
-  padding: 6rem 2rem 4rem;
-  position: relative;
+  padding: 10rem 2rem 6rem;
   text-align: center;
-}
-.hero::before {
-  content: '';
-  position: absolute; top:50%; left:50%;
-  transform: translate(-50%,-50%);
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(0,212,170,0.06) 0%, transparent 70%);
-  pointer-events: none;
+  max-width: 900px;
+  margin: 0 auto;
 }
 .hero-badge {
-  font-family: var(--mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: var(--accent-cyan);
-  border: 1px solid var(--border-accent);
-  padding: 0.5rem 1.5rem;
-  border-radius: 100px;
-  margin-bottom: 2.5rem;
-  animation: fadeUp 0.8s ease both;
+  font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--accent-cyan); border: 1px solid var(--border-accent); padding: 0.5rem 1.5rem; border-radius: 100px;
+  margin-bottom: 2.5rem; animation: fadeUp 0.8s ease both;
 }
 .hero h1 {
-  font-family: var(--serif);
-  font-weight: 900;
-  font-size: clamp(2rem, 5vw, 3.8rem);
-  line-height: 1.3;
-  letter-spacing: -0.02em;
-  max-width: 900px;
-  animation: fadeUp 0.8s 0.15s ease both;
+  font-family: var(--serif); font-weight: 900; font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.3;
+  letter-spacing: -0.01em; animation: fadeUp 0.8s 0.15s ease both;
 }
 .hero h1 .accent { color: var(--accent-cyan); }
 .hero .hero-sub {
-  font-size: 1rem;
-  color: var(--text-secondary);
-  max-width: 700px;
-  margin-top: 1.5rem;
-  animation: fadeUp 0.8s 0.3s ease both;
-}
-.hero .hero-stats {
-  display: flex; gap: 3rem;
-  margin-top: 3.5rem;
-  animation: fadeUp 0.8s 0.45s ease both;
-}
-.hero .hero-stat {
-  text-align: center;
-}
-.hero .hero-stat .num {
-  font-family: var(--mono);
-  font-size: 2.2rem;
-  font-weight: 500;
-  color: var(--accent-cyan);
-  display: block;
-}
-.hero .hero-stat .label {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-top: 0.3rem;
-}
-.scroll-hint {
-  position: absolute; bottom: 2rem;
-  animation: bounce 2s infinite;
-}
-.scroll-hint span {
-  display: block;
-  width: 1px; height: 40px;
-  background: linear-gradient(to bottom, var(--accent-cyan), transparent);
+  font-size: 1.05rem; color: var(--text-secondary); margin-top: 2rem; animation: fadeUp 0.8s 0.3s ease both;
+  line-height: 1.8;
 }
 
-/* --- Section Base --- */
-section {
-  padding: 6rem 2rem;
-  max-width: 1200px;
+/* --- Layout --- */
+.main-layout {
+  max-width: var(--container-width);
   margin: 0 auto;
+  padding: 0 2rem;
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 5rem;
 }
+
+.content-area { min-width: 0; }
+
+.sidebar-toc {
+  position: sticky;
+  top: 120px;
+  height: fit-content;
+}
+.toc-list {
+  list-style: none;
+  border-right: 1px solid var(--border);
+  padding-right: 1.5rem;
+  text-align: right;
+}
+.toc-list li { margin-bottom: 1.2rem; }
+.toc-list a {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: all 0.3s;
+  display: block;
+  font-family: var(--mono);
+  text-transform: uppercase;
+}
+.toc-list a.active { color: var(--accent-cyan); border-right: 2px solid var(--accent-cyan); padding-right: 0.5rem; margin-right: -1.5rem; }
+
+@media (max-width: 1100px) {
+  .main-layout { grid-template-columns: 1fr; }
+  .sidebar-toc { display: none; }
+}
+
+/* --- Sections --- */
+section { padding: 6rem 0; }
+.divider { width: 100%; height: 1px; background: linear-gradient(to right, transparent, var(--border), transparent); }
 .section-label {
-  font-family: var(--mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: var(--accent-cyan);
-  margin-bottom: 1rem;
-  display: flex; align-items: center; gap: 1rem;
+  font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--accent-cyan); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;
 }
-.section-label::before {
-  content: '';
-  width: 30px; height: 1px;
-  background: var(--accent-cyan);
-}
-.section-title {
-  font-family: var(--serif);
-  font-size: clamp(1.6rem, 3vw, 2.4rem);
-  font-weight: 700;
-  line-height: 1.4;
-  margin-bottom: 1.5rem;
-}
-.section-desc {
-  color: var(--text-secondary);
-  max-width: 800px;
-  margin-bottom: 3rem;
-  font-size: 0.95rem;
-}
+.section-label::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, var(--accent-cyan-dim), transparent); }
+.section-title { font-family: var(--serif); font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 700; line-height: 1.4; margin-bottom: 1.5rem; }
+.section-desc { color: var(--text-secondary); max-width: 100%; margin-bottom: 3.5rem; font-size: 0.95rem; text-align: justify; }
 
-/* --- Divider --- */
-.divider {
-  max-width: 1200px; margin: 0 auto;
-  height: 1px;
-  background: linear-gradient(to right, transparent, var(--border-accent), transparent);
-}
+/* --- Tables --- */
+.data-table-wrap { overflow-x: auto; margin: 2rem 0; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-secondary); }
+.data-table { width: 100%; min-width: 800px; border-collapse: collapse; font-size: 0.8rem; }
+.data-table th { font-family: var(--mono); font-size: 0.65rem; color: var(--accent-cyan); padding: 1.2rem; text-align: left; border-bottom: 1px solid var(--border); background: var(--bg-tertiary); }
+.data-table td { padding: 1.2rem; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: top; }
 
-/* --- Data Collection Table --- */
-.data-table-wrap {
-  overflow-x: auto;
-  margin: 2rem 0;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--bg-secondary);
-}
-.data-table {
-  width: 100%; min-width: 800px;
-  border-collapse: collapse;
-  font-size: 0.82rem;
-}
-.data-table thead { background: var(--bg-tertiary); }
-.data-table th {
-  font-family: var(--mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--accent-cyan);
-  padding: 1rem 1.2rem;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-}
-.data-table td {
-  padding: 1rem 1.2rem;
-  border-bottom: 1px solid var(--border);
-  color: var(--text-secondary);
-  vertical-align: top;
-  line-height: 1.65;
-}
-.data-table tbody tr { transition: background 0.2s; }
-.data-table tbody tr:hover { background: var(--bg-card); }
-.data-table .platform-tag {
-  font-family: var(--mono);
-  font-size: 0.7rem;
-  padding: 0.2rem 0.6rem;
-  border-radius: 4px;
-  white-space: nowrap;
-}
+/* --- Cards --- */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
+.analysis-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; border-top: 2px solid var(--accent-cyan); }
+.analysis-card h3 { font-size: 1.05rem; margin-bottom: 1rem; font-family: var(--serif); }
+.analysis-card p { font-size: 0.85rem; color: var(--text-secondary); }
+
+.emotion-card { padding: 2rem; border-radius: 12px; background: var(--bg-card); border: 1px solid var(--border); position: relative; }
+.emotion-label { font-family: var(--mono); font-size: 0.65rem; padding: 0.3rem 0.8rem; border-radius: 4px; display: inline-block; margin-bottom: 1rem; }
+.emo-anger { border-left: 4px solid var(--accent-rose); }
+.emo-anger .emotion-label { background: var(--accent-rose-dim); color: var(--accent-rose); }
+.emo-anxiety { border-left: 4px solid var(--accent-amber); }
+.emo-anxiety .emotion-label { background: var(--accent-amber-dim); color: var(--accent-amber); }
+.emo-disappoint { border-left: 4px solid var(--accent-blue); }
+.emo-disappoint .emotion-label { background: var(--accent-blue-dim); color: var(--accent-blue); }
+
+.kw-tag { font-family: var(--mono); font-size: 0.62rem; padding: 0.25rem 0.6rem; border-radius: 4px; background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-muted); margin-right: 0.3rem; display: inline-block; margin-top: 0.5rem; }
+
+/* --- References --- */
+.ref-section { padding: 4rem 0; border-top: 1px solid var(--border); }
+.ref-list { list-style: none; counter-reset: ref; }
+.ref-list li { counter-increment: ref; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.8rem; display: flex; gap: 1rem; }
+.ref-list li::before { content: "[" counter(ref) "]"; font-family: var(--mono); color: var(--accent-cyan); }
+.ref-list a { color: var(--text-muted); text-decoration: none; word-break: break-all; }
+.ref-list a:hover { color: var(--accent-cyan); }
+
+/* --- Animations --- */
+@keyframes fadeUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(30px); transition: 1s cubic-bezier(0.22, 1, 0.36, 1); }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* --- Platform Tags --- */
+.platform-tag { font-family: var(--mono); font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 500; }
 .tag-google { background: var(--accent-blue-dim); color: var(--accent-blue); }
 .tag-hotpepper { background: var(--accent-rose-dim); color: var(--accent-rose); }
 .tag-kangnam { background: var(--accent-amber-dim); color: var(--accent-amber); }
 .tag-tribeau { background: var(--accent-cyan-dim); color: var(--accent-cyan); }
 
-/* --- NLP Pipeline --- */
-.pipeline {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  margin: 2rem 0;
-}
-.pipeline-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 2rem;
-  transition: all 0.3s;
-  position: relative;
-  overflow: hidden;
-}
-.pipeline-card::before {
-  content: '';
-  position: absolute; top:0; left:0; right:0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--accent-cyan), transparent);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.pipeline-card:hover {
-  border-color: var(--border-accent);
-  transform: translateY(-2px);
-  box-shadow: var(--glow-cyan);
-}
-.pipeline-card:hover::before { opacity: 1; }
-.pipeline-step {
-  font-family: var(--mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.15em;
-  color: var(--accent-cyan);
-  text-transform: uppercase;
-  margin-bottom: 0.8rem;
-}
-.pipeline-card h3 {
-  font-family: var(--serif);
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin-bottom: 0.8rem;
-}
-.pipeline-card p {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  line-height: 1.7;
-}
-
-/* --- Dictionary Table --- */
-.dict-table-wrap {
-  overflow-x: auto;
-  margin: 2rem 0;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--bg-secondary);
-}
-.dict-table {
-  width: 100%; min-width: 700px;
-  border-collapse: collapse;
-  font-size: 0.82rem;
-}
-.dict-table th {
-  font-family: var(--mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--accent-cyan);
-  padding: 0.9rem 1.2rem;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-tertiary);
-}
-.dict-table td {
-  padding: 0.8rem 1.2rem;
-  border-bottom: 1px solid var(--border);
-  color: var(--text-secondary);
-  vertical-align: top;
-}
-.dict-table tbody tr:hover { background: var(--bg-card); }
-.dict-table .word-highlight {
-  color: var(--text-primary);
-  font-weight: 500;
-}
-.dict-table .error-text {
-  color: var(--accent-rose);
-  font-family: var(--mono);
-  font-size: 0.78rem;
-}
-.dict-table .cost-val {
-  font-family: var(--mono);
-  color: var(--accent-cyan);
-}
-
-/* --- Analysis Findings --- */
-.findings-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 1.5rem;
-  margin: 2rem 0;
-}
-.finding-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 2rem;
-  transition: all 0.3s;
-}
-.finding-card:hover {
-  border-color: var(--border-accent);
-  box-shadow: var(--glow-cyan);
-}
-.finding-icon {
-  width: 48px; height: 48px;
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.4rem;
-  margin-bottom: 1.2rem;
-}
-.finding-card h3 {
-  font-family: var(--serif);
-  font-size: 1.05rem;
-  font-weight: 700;
-  margin-bottom: 0.6rem;
-}
-.finding-card .finding-pct {
-  font-family: var(--mono);
-  font-size: 2rem;
-  font-weight: 500;
-  margin-bottom: 0.4rem;
-}
-.finding-card .finding-keywords {
-  display: flex; flex-wrap: wrap; gap: 0.4rem;
-  margin-top: 1rem;
-}
-.finding-card .kw-tag {
-  font-family: var(--mono);
-  font-size: 0.65rem;
-  padding: 0.25rem 0.6rem;
-  border-radius: 4px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-}
-
-/* --- Topic Colors --- */
-.topic-ops { border-left: 3px solid var(--accent-rose); }
-.topic-ops .finding-icon { background: var(--accent-rose-dim); }
-.topic-ops .finding-pct { color: var(--accent-rose); }
-
-.topic-staff { border-left: 3px solid var(--accent-amber); }
-.topic-staff .finding-icon { background: var(--accent-amber-dim); }
-.topic-staff .finding-pct { color: var(--accent-amber); }
-
-.topic-sales { border-left: 3px solid var(--accent-blue); }
-.topic-sales .finding-icon { background: var(--accent-blue-dim); }
-.topic-sales .finding-pct { color: var(--accent-blue); }
-
-.topic-tech { border-left: 3px solid var(--accent-cyan); }
-.topic-tech .finding-icon { background: var(--accent-cyan-dim); }
-.topic-tech .finding-pct { color: var(--accent-cyan); }
-
-/* --- Emotion Cards --- */
-.emotion-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin: 2rem 0;
-}
-.emotion-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 2rem;
-  position: relative;
-  overflow: hidden;
-}
-.emotion-card::after {
-  content: '';
-  position: absolute; bottom:0; left:0; right:0;
-  height: 60px;
-  pointer-events: none;
-}
-.emotion-label {
-  font-family: var(--mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  padding: 0.3rem 0.8rem;
-  border-radius: 4px;
-  display: inline-block;
-  margin-bottom: 1rem;
-}
-.emotion-anger .emotion-label { background: var(--accent-rose-dim); color: var(--accent-rose); }
-.emotion-anxiety .emotion-label { background: var(--accent-amber-dim); color: var(--accent-amber); }
-.emotion-disappoint .emotion-label { background: var(--accent-blue-dim); color: var(--accent-blue); }
-
-.emotion-card h3 {
-  font-family: var(--serif);
-  font-size: 1.15rem;
-  font-weight: 700;
-  margin-bottom: 0.8rem;
-}
-.emotion-card p {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  line-height: 1.75;
-}
-
-/* --- Ranking Table --- */
-.ranking-wrap {
-  overflow-x: auto;
-  margin: 2rem 0;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--bg-secondary);
-}
-.ranking-table {
-  width: 100%; min-width: 900px;
-  border-collapse: collapse;
-  font-size: 0.8rem;
-}
-.ranking-table th {
-  font-family: var(--mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--accent-cyan);
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-tertiary);
-}
-.ranking-table td {
-  padding: 1rem;
-  border-bottom: 1px solid var(--border);
-  color: var(--text-secondary);
-  vertical-align: top;
-  line-height: 1.6;
-}
-.ranking-table .rank-num {
-  font-family: var(--mono);
-  font-weight: 500;
-  width: 20px; height: 20px;
-  display: inline-flex; align-items: center; justify-content: center;
-  border-radius: 4px;
-  font-size: 0.65rem;
-  margin-right: 0.4rem;
-}
-.rank-1 { background: var(--accent-rose-dim); color: var(--accent-rose); }
-.rank-2 { background: var(--accent-amber-dim); color: var(--accent-amber); }
-.rank-3 { background: var(--accent-blue-dim); color: var(--accent-blue); }
-.emotion-micro {
-  font-family: var(--mono);
-  font-size: 0.62rem;
-  display: block;
-  margin-top: 0.3rem;
-}
-
-/* --- Procedure Accordion --- */
-.procedure-list {
-  display: flex; flex-direction: column;
-  gap: 1rem;
-  margin: 2rem 0;
-}
-.procedure-item {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-  transition: border-color 0.3s;
-}
-.procedure-item:hover { border-color: var(--border-accent); }
-.procedure-header {
-  padding: 1.5rem 2rem;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: space-between;
-  user-select: none;
-}
-.procedure-header h3 {
-  font-family: var(--serif);
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-.procedure-header .proc-tag {
-  font-family: var(--mono);
-  font-size: 0.65rem;
-  padding: 0.25rem 0.7rem;
-  border-radius: 4px;
-  background: var(--accent-cyan-dim);
-  color: var(--accent-cyan);
-}
-.procedure-header .toggle-icon {
-  color: var(--text-muted);
-  transition: transform 0.3s;
-  font-size: 1.2rem;
-}
-.procedure-item.open .toggle-icon { transform: rotate(45deg); }
-.procedure-body {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.4s ease;
-}
-.procedure-body-inner {
-  padding: 0 2rem 2rem;
-  font-size: 0.88rem;
-  color: var(--text-secondary);
-  line-height: 1.8;
-}
-
-/* --- Strategy Cards --- */
-.strategy-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  margin: 2rem 0;
-}
-.strategy-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 2rem;
-  transition: all 0.3s;
-  position: relative;
-}
-.strategy-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-accent);
-  box-shadow: var(--glow-cyan);
-}
-.strategy-num {
-  font-family: var(--mono);
-  font-size: 3rem;
-  font-weight: 500;
-  color: var(--bg-tertiary);
-  position: absolute;
-  top: 1rem; right: 1.5rem;
-  line-height: 1;
-}
-.strategy-card h3 {
-  font-family: var(--serif);
-  font-size: 1rem;
-  font-weight: 700;
-  margin-bottom: 0.8rem;
-  padding-right: 2rem;
-}
-.strategy-card p {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  line-height: 1.75;
-}
-.strategy-card .copy-examples {
-  margin-top: 1.2rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
-}
-.strategy-card .copy-example {
-  font-size: 0.8rem;
-  color: var(--accent-cyan);
-  font-style: italic;
-  margin-bottom: 0.5rem;
-  padding-left: 1rem;
-  border-left: 2px solid var(--accent-cyan-dim);
-}
-
-/* --- Dashboard KPI --- */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin: 2rem 0;
-}
-.kpi-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1.5rem;
-}
-.kpi-card h4 {
-  font-family: var(--mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 0.5rem;
-}
-.kpi-card p {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  line-height: 1.7;
-}
-
-/* --- Co-occurrence Clusters --- */
-.cluster-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 1.5rem;
-  margin: 2rem 0;
-}
-.cluster-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 2rem;
-}
-.cluster-card h3 {
-  font-family: var(--serif);
-  font-size: 1rem;
-  font-weight: 700;
-  margin-bottom: 0.8rem;
-}
-.cluster-card .cluster-links {
-  font-family: var(--mono);
-  font-size: 0.78rem;
-  color: var(--accent-cyan);
-  margin-bottom: 0.8rem;
-  line-height: 1.8;
-}
-.cluster-card .cluster-links .arrow { color: var(--text-muted); margin: 0 0.3rem; }
-.cluster-card p {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  line-height: 1.7;
-}
-
-/* --- Footer --- */
-footer {
-  padding: 4rem 2rem;
-  text-align: center;
-  border-top: 1px solid var(--border);
-}
-footer .footer-mono {
-  font-family: var(--mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 0.5rem;
-}
-footer .footer-copy {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-/* --- References --- */
-.ref-section {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 3rem 2rem 4rem;
-}
-.ref-section details {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-}
-.ref-section summary {
-  font-family: var(--mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  color: var(--text-secondary);
-  padding: 1.2rem 1.5rem;
-  cursor: pointer;
-  user-select: none;
-}
-.ref-section summary:hover { color: var(--accent-cyan); }
-.ref-list {
-  padding: 0 1.5rem 1.5rem;
-  list-style: none;
-  counter-reset: ref;
-}
-.ref-list li {
-  counter-increment: ref;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  padding: 0.4rem 0;
-  border-bottom: 1px solid var(--border);
-  line-height: 1.6;
-}
-.ref-list li::before {
-  content: counter(ref) ".";
-  font-family: var(--mono);
-  color: var(--accent-cyan);
-  margin-right: 0.6rem;
-  font-size: 0.68rem;
-}
-.ref-list li:last-child { border-bottom: none; }
-.ref-list a {
-  color: var(--text-muted);
-  text-decoration: none;
-  word-break: break-all;
-}
-.ref-list a:hover { color: var(--accent-cyan); }
-
-/* --- Animations --- */
-@keyframes fadeUp {
-  from { opacity:0; transform: translateY(20px); }
-  to { opacity:1; transform: translateY(0); }
-}
-@keyframes bounce {
-  0%,100% { transform: translateY(0); }
-  50% { transform: translateY(8px); }
-}
-.reveal {
-  opacity: 0;
-  transform: translateY(30px);
-  transition: all 0.7s cubic-bezier(0.22,1,0.36,1);
-}
-.reveal.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* --- Responsive --- */
-@media (max-width: 768px) {
-  nav .nav-links { display: none; }
-  .hero .hero-stats { flex-direction: column; gap: 1.5rem; }
-  section { padding: 4rem 1.2rem; }
-  .pipeline { grid-template-columns: 1fr; }
-  .findings-grid { grid-template-columns: 1fr; }
-  .strategy-grid { grid-template-columns: 1fr; }
-}
+footer { padding: 6rem 2rem; text-align: center; border-top: 1px solid var(--border); }
+.grid-bg { position: fixed; inset:0; background-image: linear-gradient(rgba(0,212,170,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,170,0.02) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; z-index: -1; }
 </style>
 </head>
 <body>
 
 <div class="grid-bg"></div>
 
-<!-- Navigation -->
 <nav>
   <div class="nav-inner">
-    <div class="nav-logo">NLP Review Analytics</div>
-    <ul class="nav-links">
-      <li><a href="#collection">データ収集</a></li>
+    <div class="nav-logo">Competitive Intelligence Report</div>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#collection">収集設計</a></li>
       <li><a href="#nlp">NLP前処理</a></li>
-      <li><a href="#analysis">分析結果</a></li>
+      <li><a href="#analysis">構造分析</a></li>
       <li><a href="#ranking">ランキング</a></li>
-      <li><a href="#strategy">戦略施策</a></li>
+      <li><a href="#strategy">改善施策</a></li>
       <li><a href="#dashboard">ダッシュボード</a></li>
     </ul>
+    <button class="menu-toggle" id="menuToggle">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
 
-<!-- Hero -->
 <header class="hero">
-  <div class="hero-badge">Competitive Intelligence Report</div>
-  <h1>美容クリニック競合他院の<br><span class="accent">ネガティブ口コミ</span>を<br>NLPで構造解析する</h1>
-  <p class="hero-sub">テキストマイニングと感情分析によって競合が落としているポイントを可視化し、戦略的改善施策とマーケティング訴求に転換する包括的レポート</p>
-  <div class="hero-stats">
-    <div class="hero-stat">
-      <span class="num">4</span>
-      <span class="label">対象媒体</span>
-    </div>
-    <div class="hero-stat">
-      <span class="num">4</span>
-      <span class="label">LDAトピック</span>
-    </div>
-    <div class="hero-stat">
-      <span class="num">3</span>
-      <span class="label">感情ラベル</span>
-    </div>
-    <div class="hero-stat">
-      <span class="num">22</span>
-      <span class="label">引用文献</span>
-    </div>
-  </div>
-  <div class="scroll-hint"><span></span></div>
+  <div class="hero-badge">Intelligence Analysis</div>
+  <h1>美容クリニック競合他院の<br><span class="accent">ネガティブ口コミ</span>に関する<br>NLP分析と戦略的改善施策</h1>
+  <p class="hero-sub">患者が抱く不満や期待値とのギャップを正確に把握し、<br>各種プラットフォームの制約を遵守したデータマイニングから導き出す競合優位性の確立ガイド</p>
 </header>
 
-<!-- Section 1: Data Collection -->
-<div class="divider"></div>
-<section id="collection">
-  <div class="reveal">
-    <div class="section-label">Section 01 — Data Acquisition</div>
-    <h2 class="section-title">データ収集設計と法的制約</h2>
-    <p class="section-desc">Google Maps、ホットペッパービューティー、カンナムオンニ、トリビューの各プラットフォームにおける技術的・法的制約を精緻に分析し、適法かつ統計的有意性を担保する代替的なデータ収集手法を定義する。</p>
-  </div>
-
-  <div class="reveal">
-    <div class="data-table-wrap">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>媒体</th>
-            <th>ユーザー層</th>
-            <th>API / スクレイピング制約</th>
-            <th>代替収集手段</th>
-            <th>サンプルサイズ目安</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><span class="platform-tag tag-google">Google Maps</span></td>
-            <td>一般層。アクセス利便性・接客態度・待ち時間を重視</td>
-            <td>Places APIは最大5件制限。スクレイピング・バルク保存は規約違反</td>
-            <td>目視による手動サンプリング、または適法な商用データプロバイダからの限定購入</td>
-            <td>★1〜3から 30〜50件</td>
-          </tr>
-          <tr>
-            <td><span class="platform-tag tag-hotpepper">ホットペッパー</span></td>
-            <td>美容感度 中〜高層。コスパ・サロン的接遇を期待</td>
-            <td>競合レビュー取得不可。規約第4条で二次利用制限</td>
-            <td>公開範囲内での定性リサーチ。「参考になった」票上位を目視確認</td>
-            <td>役立ち度順で 20〜30件</td>
-          </tr>
-          <tr>
-            <td><span class="platform-tag tag-kangnam">カンナムオンニ</span></td>
-            <td>若年層。コスパ・症例の豊富さを重視</td>
-            <td>クローズドエコシステム。API非公開、スクレイピング禁止</td>
-            <td>アプリ内検索で施術別に低評価傾向をカテゴリ集約</td>
-            <td>主要施術ごと 10〜20件</td>
-          </tr>
-          <tr>
-            <td><span class="platform-tag tag-tribeau">トリビュー</span></td>
-            <td>コア層。医師の技術力・ダウンタイム経過を重視</td>
-            <td>スクレイピング禁止。著作権・プライバシー侵害リスク</td>
-            <td>日記形式レビューから「失敗」「不満」等を目視検索、匿名化記録</td>
-            <td>施術ごと 10〜20件</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="reveal" style="margin-top:2rem">
-    <p style="font-size:0.88rem; color:var(--text-secondary); line-height:1.8; max-width:900px;">
-      偏りの抑制として、「★1〜2（顕在化した怒り・不満）」と「★3（期待外れ・潜在的不満）」を明確に区分して比較分析する設計を採用。★1は感情的バイアスが強く個人的クレームに偏る傾向がある一方、★3にはクリニックの構造的課題に直結する建設的な示唆が豊富に含まれている。抽出データはすべて個人名・日付・他院名をマスキングし、完全匿名化テキストコーパスとして分析基盤に投入する。
-    </p>
-  </div>
-</section>
-
-<!-- Section 2: NLP Preprocessing -->
-<div class="divider"></div>
-<section id="nlp">
-  <div class="reveal">
-    <div class="section-label">Section 02 — NLP Preprocessing</div>
-    <h2 class="section-title">美容医療特化型テキストマイニングの前処理</h2>
-    <p class="section-desc">MeCab + ComeJisyo（医療用語辞書）をベースに、美容医療ドメイン専用のユーザー定義辞書をコンパイルし、表記ゆれの正規化、固有名詞のマスキング、品詞フィルタリングまでを統合するNLPパイプラインを構築する。</p>
-  </div>
-
-  <div class="pipeline reveal">
-    <div class="pipeline-card">
-      <div class="pipeline-step">Step 01</div>
-      <h3>形態素解析と専門辞書</h3>
-      <p>MeCab + ComeJisyoをベースに、「エラボトックス」「糸リフト」「ダウンタイム」等の美容医療専門用語を低コスト値で登録し、誤分割を防止する。</p>
-    </div>
-    <div class="pipeline-card">
-      <div class="pipeline-step">Step 02</div>
-      <h3>表記ゆれの統一</h3>
-      <p>「ボト」「botox」「ボトックス注射」→「ボトックス」に正規化。さらにステミング処理で「痛かった」「痛くない」→原形「痛い」に変換。</p>
-    </div>
-    <div class="pipeline-card">
-      <div class="pipeline-step">Step 03</div>
-      <h3>固有名詞のマスキング</h3>
-      <p>正規表現で他院名→&lt;CLINIC_NAME&gt;、医師名→&lt;DOCTOR_NAME&gt;、金額→&lt;PRICE&gt;に置換し、感情と構造のみを抽出可能にする。</p>
-    </div>
-    <div class="pipeline-card">
-      <div class="pipeline-step">Step 04</div>
-      <h3>ストップワード除去と品詞フィルタ</h3>
-      <p>助詞・助動詞・接続詞を除去し、名詞（施術名・接遇要素）、形容詞（不満表現）、動詞（された・失敗した）のみを抽出対象とする。</p>
-    </div>
-  </div>
-
-  <div class="reveal">
-    <h3 style="font-family:var(--serif); font-size:1.1rem; margin:2rem 0 1rem;">ユーザー定義辞書の登録例</h3>
-    <div class="dict-table-wrap">
-      <table class="dict-table">
-        <thead>
-          <tr>
-            <th>登録単語</th>
-            <th>品詞設定</th>
-            <th>コスト値</th>
-            <th>標準辞書の誤分割（回避対象）</th>
-            <th>意味的コンテキスト</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="word-highlight">エラボトックス</td>
-            <td>名詞,一般</td>
-            <td class="cost-val">10</td>
-            <td class="error-text">エラ / ボトックス</td>
-            <td>咬筋縮小を目的としたボツリヌストキシン注射</td>
-          </tr>
-          <tr>
-            <td class="word-highlight">糸リフト</td>
-            <td>名詞,一般</td>
-            <td class="cost-val">10</td>
-            <td class="error-text">糸 / リフト</td>
-            <td>スレッドによるたるみ引き上げ治療</td>
-          </tr>
-          <tr>
-            <td class="word-highlight">肝斑</td>
-            <td>名詞,一般</td>
-            <td class="cost-val">10</td>
-            <td class="error-text">肝 / 斑</td>
-            <td>女性ホルモン等起因の色素沈着</td>
-          </tr>
-          <tr>
-            <td class="word-highlight">カスハラ</td>
-            <td>名詞,一般</td>
-            <td class="cost-val">10</td>
-            <td class="error-text">カス / ハラ</td>
-            <td>カスタマーハラスメント</td>
-          </tr>
-          <tr>
-            <td class="word-highlight">ダウンタイム</td>
-            <td>名詞,一般</td>
-            <td class="cost-val">10</td>
-            <td class="error-text">ダウン / タイム</td>
-            <td>施術後の回復期間</td>
-          </tr>
-          <tr>
-            <td class="word-highlight">カウンセラー</td>
-            <td>名詞,一般</td>
-            <td class="cost-val">10</td>
-            <td class="error-text">カウンセ / ラー</td>
-            <td>料金・メニュー説明を行うスタッフ</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<!-- Section 3: Analysis -->
-<div class="divider"></div>
-<section id="analysis">
-  <div class="reveal">
-    <div class="section-label">Section 03 — Text Mining Analysis</div>
-    <h2 class="section-title">ネガティブ要因の多角的分析</h2>
-    <p class="section-desc">TF-IDF、共起ネットワーク、LDA、感情分析の4つのNLPアルゴリズムにより、美容クリニックの不満構造を解き明かす。</p>
-  </div>
-
-  <!-- TF-IDF -->
-  <div class="reveal" style="margin-bottom: 3rem;">
-    <h3 style="font-family:var(--serif); font-size:1.2rem; margin-bottom:1rem;">TF-IDFによる評価帯域別の特徴語</h3>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin:1rem 0;">
-      <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:1.5rem;">
-        <div style="font-family:var(--mono); font-size:0.65rem; color:var(--accent-rose); letter-spacing:0.1em; margin-bottom:0.8rem;">★1〜2 のみ — 信頼基盤の崩壊</div>
-        <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
-          <span class="kw-tag" style="background:var(--accent-rose-dim); color:var(--accent-rose); border-color:transparent;">態度</span>
-          <span class="kw-tag" style="background:var(--accent-rose-dim); color:var(--accent-rose); border-color:transparent;">最悪</span>
-          <span class="kw-tag" style="background:var(--accent-rose-dim); color:var(--accent-rose); border-color:transparent;">待たされる</span>
-          <span class="kw-tag" style="background:var(--accent-rose-dim); color:var(--accent-rose); border-color:transparent;">返金</span>
-          <span class="kw-tag" style="background:var(--accent-rose-dim); color:var(--accent-rose); border-color:transparent;">消費者センター</span>
+<div class="main-layout">
+  <main class="content-area">
+    
+    <!-- Section 1 -->
+    <section id="collection">
+      <div class="reveal">
+        <div class="section-label">Section 01</div>
+        <h2 class="section-title">データ収集設計における技術的・法的制約</h2>
+        <p class="section-desc">主要な口コミ媒体であるGoogle Maps、ホットペッパービューティー、カンナムオンニ、トリビューからのデータ収集においては、プラットフォーム側が定める厳格な利用規約と技術的な取得制限が存在し、無秩序なスクレイピングはコンプライアンス違反のリスクを孕んでいる。</p>
+        
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>媒体名</th>
+                <th>API / スクレイピング制約</th>
+                <th>代替収集手段とサンプリング設計</th>
+                <th>サンプルサイズ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="platform-tag tag-google">Google Maps</span></td>
+                <td>Places APIは最大5件制限 <sup>1</sup>。バルク保存は規約違反 <sup>8</sup>。</td>
+                <td>公開情報の目視確認による手動サンプリング。商用二次データプロバイダ（Scrap.io等）の活用。</td>
+                <td>30〜50件 / 院</td>
+              </tr>
+              <tr>
+                <td><span class="platform-tag tag-hotpepper">ホットペッパー</span></td>
+                <td>競合レビューのAPI取得不可。二次利用・転載制限 <sup>13</sup>。</td>
+                <td>公開範囲内での定性的リサーチ。「参考になった」票が多いレビューを目視確認し、要約記録。</td>
+                <td>上位20〜30件</td>
+              </tr>
+              <tr>
+                <td><span class="platform-tag tag-kangnam">カンナムオンニ</span></td>
+                <td>API非公開。クローズドエコシステム。</td>
+                <td>アプリ内検索による手動サンプリング。特定の施術（糸リフト等）に絞り込み不満傾向を集約。</td>
+                <td>10〜20件 / 施術</td>
+              </tr>
+              <tr>
+                <td><span class="platform-tag tag-tribeau">トリビュー</span></td>
+                <td>著作権・プライバシー保護の観点から禁止。</td>
+                <td>日記形式レビューから「失敗」「後悔」等のキーワードで目視検索し、匿名化して定性記録。</td>
+                <td>10〜20件 / 施術</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <p style="font-size:0.82rem; color:var(--text-secondary); margin-top:0.8rem; line-height:1.7;">ホスピタリティの決定的欠如、時間の不履行、高圧的な契約強要 —「医療機関としての倫理的基盤の崩壊」に対する強い怒り。</p>
+        <p style="font-size:0.88rem; color:var(--text-secondary); line-height:1.8;">
+          本分析では「星1〜2（顕在化した怒り）」と「星3（期待外れ・潜在的不満）」を明確に区分する。星3には「施術には満足だが待ち時間が長い」といった、クリニックの構造的な課題と改善に直結する建設的な示唆が豊富に含まれている。
+        </p>
       </div>
-      <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:1.5rem;">
-        <div style="font-family:var(--mono); font-size:0.65rem; color:var(--accent-blue); letter-spacing:0.1em; margin-bottom:0.8rem;">★1〜3 全体 — 費用対効果への失望</div>
-        <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
-          <span class="kw-tag" style="background:var(--accent-blue-dim); color:var(--accent-blue); border-color:transparent;">戻る</span>
-          <span class="kw-tag" style="background:var(--accent-blue-dim); color:var(--accent-blue); border-color:transparent;">変わらない</span>
-          <span class="kw-tag" style="background:var(--accent-blue-dim); color:var(--accent-blue); border-color:transparent;">少し</span>
-          <span class="kw-tag" style="background:var(--accent-blue-dim); color:var(--accent-blue); border-color:transparent;">高い</span>
-          <span class="kw-tag" style="background:var(--accent-blue-dim); color:var(--accent-blue); border-color:transparent;">普通</span>
-          <span class="kw-tag" style="background:var(--accent-blue-dim); color:var(--accent-blue); border-color:transparent;">惜しい</span>
-        </div>
-        <p style="font-size:0.82rem; color:var(--text-secondary); margin-top:0.8rem; line-height:1.7;">基本サービスには及第点だが、臨床効果が期待値を下回った —「支払った対価に対する変化の乏しさ」への静かな失望。</p>
-      </div>
-    </div>
-  </div>
+    </section>
 
-  <!-- Co-occurrence -->
-  <div class="reveal" style="margin-bottom: 3rem;">
-    <h3 style="font-family:var(--serif); font-size:1.2rem; margin-bottom:1rem;">共起ネットワークによる文脈クラスター</h3>
-    <div class="cluster-grid">
-      <div class="cluster-card">
-        <h3>接遇・フロント対応</h3>
-        <div class="cluster-links">
-          受付 <span class="arrow">⇔</span> 態度 <span class="arrow">⇔</span> 悪い<br>
-          スタッフ <span class="arrow">⇔</span> 私語 <span class="arrow">⇔</span> 多い
-        </div>
-        <p>施術室に入る前の待合室段階で、受付の冷淡な対応やバックヤードからのスタッフの雑談に鋭く反応し不信感を形成。</p>
-      </div>
-      <div class="cluster-card">
-        <h3>カウンセリングと商業主義</h3>
-        <div class="cluster-links">
-          カウンセリング <span class="arrow">⇔</span> 長い <span class="arrow">⇔</span> 押し売り<br>
-          高い <span class="arrow">⇔</span> ローン <span class="arrow">⇔</span> 組まされる
-        </div>
-        <p>医師診察前の無資格カウンセラーによるアップセル行為と、見積もりの不透明さが不満の核を形成。</p>
-      </div>
-      <div class="cluster-card">
-        <h3>時間管理・オペレーション</h3>
-        <div class="cluster-links">
-          予約 <span class="arrow">⇔</span> したのに <span class="arrow">⇔</span> 待たされる<br>
-          待ち時間 <span class="arrow">⇔</span> 長い <span class="arrow">⇔</span> 案内されない
-        </div>
-        <p>完全予約制を謳いながら院内オペレーションが破綻していることへの強いクレーム。</p>
-      </div>
-    </div>
-  </div>
+    <div class="divider"></div>
 
-  <!-- LDA Topics -->
-  <div class="reveal" style="margin-bottom: 3rem;">
-    <h3 style="font-family:var(--serif); font-size:1.2rem; margin-bottom:1rem;">LDA（潜在ディリクレ配分法）によるトピック分類</h3>
-    <div class="findings-grid">
-      <div class="finding-card topic-ops">
-        <div class="finding-icon">⏱</div>
-        <div class="finding-pct">35%</div>
-        <h3>運営オペレーションと待ち時間の崩壊</h3>
-        <div class="finding-keywords">
-          <span class="kw-tag">待つ</span>
-          <span class="kw-tag">予約</span>
-          <span class="kw-tag">案内</span>
-          <span class="kw-tag">時間</span>
-          <span class="kw-tag">遅い</span>
-        </div>
-      </div>
-      <div class="finding-card topic-staff">
-        <div class="finding-icon">👤</div>
-        <div class="finding-pct">25%</div>
-        <h3>接遇マナーとスタッフの態度</h3>
-        <div class="finding-keywords">
-          <span class="kw-tag">受付</span>
-          <span class="kw-tag">態度</span>
-          <span class="kw-tag">冷たい</span>
-          <span class="kw-tag">看護師</span>
-          <span class="kw-tag">作業</span>
-        </div>
-      </div>
-      <div class="finding-card topic-sales">
-        <div class="finding-icon">💰</div>
-        <div class="finding-pct">20%</div>
-        <h3>強引なカウンセリングと不透明な料金</h3>
-        <div class="finding-keywords">
-          <span class="kw-tag">見積もり</span>
-          <span class="kw-tag">高い</span>
-          <span class="kw-tag">営業</span>
-          <span class="kw-tag">押し売り</span>
-          <span class="kw-tag">断る</span>
-        </div>
-      </div>
-      <div class="finding-card topic-tech">
-        <div class="finding-icon">🔬</div>
-        <div class="finding-pct">20%</div>
-        <h3>施術効果の欠如と技術的失敗</h3>
-        <div class="finding-keywords">
-          <span class="kw-tag">変わらない</span>
-          <span class="kw-tag">痛い</span>
-          <span class="kw-tag">左右差</span>
-          <span class="kw-tag">不自然</span>
-          <span class="kw-tag">腫れ</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Emotion Analysis -->
-  <div class="reveal">
-    <h3 style="font-family:var(--serif); font-size:1.2rem; margin-bottom:1rem;">感情分析による心理状態のラベリング</h3>
-    <div class="emotion-grid">
-      <div class="emotion-card emotion-anger">
-        <span class="emotion-label">Anger — 怒り</span>
-        <h3>契約・ルールの不履行への激昂</h3>
-        <p>スタッフの高圧的態度、予約時間から1時間以上の待機が引き金。長文で詳細な糾弾を行う傾向があり、Google Maps ★1レビューに集中。非常に高い自己拡散力を持つ。</p>
-      </div>
-      <div class="emotion-card emotion-anxiety">
-        <span class="emotion-label">Anxiety — 不安</span>
-        <h3>説明不足とアフターケアの欠如</h3>
-        <p>医師の説明不足、施術中の痛みの配慮不足、ダウンタイム中のケア欠如に関連。「このまま腫れが引かないのではないか」という術後の孤独感がテキストに表出。</p>
-      </div>
-      <div class="emotion-card emotion-disappoint">
-        <span class="emotion-label">Disappointment — 失望</span>
-        <h3>期待値と実体験のギャップ</h3>
-        <p>★3レビューに最多。「高いお金を払いダウンタイムも我慢したのに、変化を感じられない」という費用対効果への静かな諦め。事前期待値のコントロール不足が原因。</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Section 4: Ranking -->
-<div class="divider"></div>
-<section id="ranking">
-  <div class="reveal">
-    <div class="section-label">Section 04 — Cross-Tabulation</div>
-    <h2 class="section-title">媒体×施術×カテゴリ別ネガ要因ランキング</h2>
-    <p class="section-desc">NLP分析結果をクロス集計し、プラットフォームごとのユーザー期待値の違いと施術ごとの不満構造をランキング形式で可視化する。</p>
-  </div>
-
-  <div class="reveal">
-    <div class="ranking-wrap">
-      <table class="ranking-table">
-        <thead>
-          <tr>
-            <th>媒体 / ユーザー属性</th>
-            <th>施術カテゴリ</th>
-            <th>ネガ要因 1位</th>
-            <th>ネガ要因 2位</th>
-            <th>ネガ要因 3位</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>
-              <span class="platform-tag tag-google">Google Maps</span><br>
-              <span style="font-size:0.72rem; color:var(--text-muted);">一般層・利便性重視</span>
-            </td>
-            <td>全体（皮膚科系）</td>
-            <td>
-              <span class="rank-num rank-1">1</span>予約したのに長時間待たされる
-              <span class="emotion-micro" style="color:var(--accent-rose);">怒り・苛立ち</span>
-            </td>
-            <td>
-              <span class="rank-num rank-2">2</span>受付スタッフの態度が冷たい・事務的
-              <span class="emotion-micro" style="color:var(--accent-rose);">怒り・不信感</span>
-            </td>
-            <td>
-              <span class="rank-num rank-3">3</span>医師の診察が一瞬で終わる
-              <span class="emotion-micro" style="color:var(--accent-amber);">不安・軽視</span>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <span class="platform-tag tag-hotpepper">ホットペッパー</span><br>
-              <span style="font-size:0.72rem; color:var(--text-muted);">サロン層・体験重視</span>
-            </td>
-            <td>全体（脱毛・エステ系）</td>
-            <td>
-              <span class="rank-num rank-1">1</span>カウンセリングでの強引な契約・押し売り
-              <span class="emotion-micro" style="color:var(--accent-rose);">怒り・圧迫感</span>
-            </td>
-            <td>
-              <span class="rank-num rank-2">2</span>クーポン価格と見積もりの大幅乖離
-              <span class="emotion-micro" style="color:var(--accent-amber);">不信感・騙された感覚</span>
-            </td>
-            <td>
-              <span class="rank-num rank-3">3</span>施術中の声掛け不足・配慮不足
-              <span class="emotion-micro" style="color:var(--accent-amber);">不安・不快感</span>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <span class="platform-tag tag-kangnam">カンナムオンニ</span><br>
-              <span style="font-size:0.72rem; color:var(--text-muted);">若年層・コスパ重視</span>
-            </td>
-            <td>切開系・糸リフト等</td>
-            <td>
-              <span class="rank-num rank-1">1</span>ダウンタイムの事前説明不足
-              <span class="emotion-micro" style="color:var(--accent-amber);">不安・後悔</span>
-            </td>
-            <td>
-              <span class="rank-num rank-2">2</span>症例写真のような劇的変化が見られない
-              <span class="emotion-micro" style="color:var(--accent-blue);">失望</span>
-            </td>
-            <td>
-              <span class="rank-num rank-3">3</span>アフターケアの対応が雑・連絡が遅い
-              <span class="emotion-micro" style="color:var(--accent-rose);">怒り・見捨てられ感</span>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <span class="platform-tag tag-tribeau">トリビュー</span><br>
-              <span style="font-size:0.72rem; color:var(--text-muted);">コア層・技術重視</span>
-            </td>
-            <td>ボトックス・ヒアルロン酸等</td>
-            <td>
-              <span class="rank-num rank-1">1</span>注入ミスによる不自然な仕上がり・左右差
-              <span class="emotion-micro" style="color:var(--accent-blue);">深い後悔・悲しみ</span>
-            </td>
-            <td>
-              <span class="rank-num rank-2">2</span>機能面での違和感（噛めない・笑えない）
-              <span class="emotion-micro" style="color:var(--accent-rose);">強い不安・怒り</span>
-            </td>
-            <td>
-              <span class="rank-num rank-3">3</span>医師の技術不足・デザインセンスへの不満
-              <span class="emotion-micro" style="color:var(--accent-blue);">失望・後悔</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Procedure Details -->
-  <div class="reveal" style="margin-top:3rem;">
-    <h3 style="font-family:var(--serif); font-size:1.2rem; margin-bottom:1rem;">施術別の不満構造と医学的背景</h3>
-    <div class="procedure-list">
-      <div class="procedure-item">
-        <div class="procedure-header" onclick="toggleProcedure(this)">
-          <h3>ボトックス注射 — 技術とデザインの失敗</h3>
-          <div style="display:flex; align-items:center; gap:1rem;">
-            <span class="proc-tag">注入系</span>
-            <span class="toggle-icon">+</span>
+    <!-- Section 2 -->
+    <section id="nlp">
+      <div class="reveal">
+        <div class="section-label">Section 02</div>
+        <h2 class="section-title">美容医療特化型NLP前処理パイプライン</h2>
+        <p class="section-desc">ノイズを排除して正確な構造を抽出するため、美容医療ドメインに適合するNLPパイプラインを構築する。一般的な辞書では「未知語」として誤分割される専門用語を正しく認識させる必要がある。</p>
+        
+        <div class="card-grid">
+          <div class="analysis-card">
+            <div style="font-family:var(--mono); font-size:0.65rem; color:var(--accent-cyan); margin-bottom:0.5rem;">MECHAB + COMEJISYO</div>
+            <h3>専門辞書のコンパイル</h3>
+            <p>医療用語特化辞書「ComeJisyo」をベースに、「エラボトックス」「ダウンタイム」等の語彙をコスト値を低く設定して登録し、誤分割を防止する。</p>
           </div>
-        </div>
-        <div class="procedure-body">
-          <div class="procedure-body-inner">
-            解剖学的知識不足に基づく「機能障害」と「デザインの不自然さ」に集中。眉間・目尻への過剰注入で「笑顔の引きつり」「怒り顔」等の審美的障害を引き起こす。エラボトックスでは過剰単位数により「噛む力の低下」「頬のコケ」が多発。注入後2〜7日で効果発現、約2週間でピークに達するため、一度の失敗が数ヶ月間の精神的苦痛を招き、激烈なネガティブ口コミ（★1）に直結する。
+          <div class="analysis-card">
+            <div style="font-family:var(--mono); font-size:0.65rem; color:var(--accent-cyan); margin-bottom:0.5rem;">NORMALIZATION</div>
+            <h3>表記ゆれの統一</h3>
+            <p>「ボト」「botox」「ボトックス注射」を「ボトックス」に正規化。ステミング処理により「痛かった」「痛くない」を原形「痛い」に変換する。</p>
+          </div>
+          <div class="analysis-card">
+            <div style="font-family:var(--mono); font-size:0.65rem; color:var(--accent-cyan); margin-bottom:0.5rem;">MASKING</div>
+            <h3>個人情報の匿名化</h3>
+            <p>正規表現を用いて他院名、医師名、金額を &lt;CLINIC_NAME&gt;, &lt;DOCTOR_NAME&gt;, &lt;PRICE&gt; 等のタグに置換し、感情と構造のみを抽出する。</p>
           </div>
         </div>
       </div>
-      <div class="procedure-item">
-        <div class="procedure-header" onclick="toggleProcedure(this)">
-          <h3>シミ取り・レーザー治療 — 診断ミスと期待値のズレ</h3>
-          <div style="display:flex; align-items:center; gap:1rem;">
-            <span class="proc-tag">レーザー系</span>
-            <span class="toggle-icon">+</span>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Section 3 -->
+    <section id="analysis">
+      <div class="reveal">
+        <div class="section-label">Section 03</div>
+        <h2 class="section-title">ネガティブ要因の多角的分析</h2>
+        <p class="section-desc">前処理済みのコーパスに対し、TF-IDF、共起ネットワーク、LDA等のアルゴリズムを適用し、不満の根底にある構造を特定する。</p>
+        
+        <h3 style="font-size:1.1rem; margin-bottom:1.5rem; font-family:var(--serif);">TF-IDF法による評価帯域別の特徴</h3>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 3rem;">
+          <div style="background:var(--bg-card); padding:1.5rem; border-radius:12px; border:1px solid var(--border);">
+            <div style="font-family:var(--mono); font-size:0.6rem; color:var(--accent-rose); margin-bottom:0.5rem;">星1・星2：信頼の崩壊</div>
+            <p style="font-size:0.85rem;">特徴語：<strong>「態度」「最悪」「待たされる」「返金」</strong><br>ホスピタリティの欠如や約束の不履行、契約強要への強い憤りが核となる。</p>
+          </div>
+          <div style="background:var(--bg-card); padding:1.5rem; border-radius:12px; border:1px solid var(--border);">
+            <div style="font-family:var(--mono); font-size:0.6rem; color:var(--accent-blue); margin-bottom:0.5rem;">星3：期待値とのギャップ</div>
+            <p style="font-size:0.85rem;">特徴語：<strong>「変わらない」「少し」「高い」「惜しい」</strong><br>臨床効果が期待値を下回った、あるいは費用対効果への失望が表明される。</p>
           </div>
         </div>
-        <div class="procedure-body">
-          <div class="procedure-body-inner">
-            ネガティブ口コミの大部分が「失望」（★3）に分類。シミのタイプ（老人性色素斑・肝斑・炎症後色素沈着）に対する適切な治療法の未選択、必要照射回数の事前説明不足が原因。特に、肝斑への強力スポット照射で色素を濃くするケースは典型的な診断ミスへの不満。ダウンタイム期間のテープ保護の必要性が事前に説明されず、日常生活への支障がクレームに。
+
+        <h3 style="font-size:1.1rem; margin-bottom:1.5rem; font-family:var(--serif);">感情分析による心理状態のラベリング</h3>
+        <div class="card-grid">
+          <div class="emotion-card emo-anger">
+            <span class="emotion-label">Anger — 怒り</span>
+            <h3>ルール不履行への激昂</h3>
+            <p>1時間以上の待機や高圧的な接客により発現。自己拡散力が強く、Google Mapsの低評価レビューに集中する傾向がある。</p>
+          </div>
+          <div class="emotion-card emo-anxiety">
+            <span class="emotion-label">Anxiety — 不安</span>
+            <h3>説明不足と孤独感</h3>
+            <p>ダウンタイム中のアフターケア欠如に関連して発現。「このまま腫れが引かないのではないか」という術後の孤独感が表れる。</p>
+          </div>
+          <div class="emotion-card emo-disappoint">
+            <span class="emotion-label">Disappointment — 失望</span>
+            <h3>静かな諦め</h3>
+            <p>事前の期待値と実体験のギャップから生じる。星3レビューに最も多く見られ、費用対効果の悪さを指摘する際に顕著。</p>
           </div>
         </div>
       </div>
-      <div class="procedure-item">
-        <div class="procedure-header" onclick="toggleProcedure(this)">
-          <h3>糸リフト（スレッドリフト） — 費用対効果の悪さ</h3>
-          <div style="display:flex; align-items:center; gap:1rem;">
-            <span class="proc-tag">リフト系</span>
-            <span class="toggle-icon">+</span>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Section 4 -->
+    <section id="ranking">
+      <div class="reveal">
+        <div class="section-label">Section 04</div>
+        <h2 class="section-title">媒体×施術×カテゴリ別ネガ要因ランキング</h2>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>媒体</th>
+                <th>施術カテゴリ</th>
+                <th>ネガ要因 1位 (主な感情)</th>
+                <th>ネガ要因 2位 (主な感情)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="platform-tag tag-google">Google Maps</span></td>
+                <td>皮膚科系全体</td>
+                <td>長時間待たされる 【怒り】</td>
+                <td>スタッフの態度が冷たい 【不信感】</td>
+              </tr>
+              <tr>
+                <td><span class="platform-tag tag-hotpepper">ホットペッパー</span></td>
+                <td>脱毛・エステ系</td>
+                <td>強引な押し売り 【圧迫感】</td>
+                <td>クーポンと見積もりの乖離 【不信感】</td>
+              </tr>
+              <tr>
+                <td><span class="platform-tag tag-kangnam">カンナムオンニ</span></td>
+                <td>切開系・糸リフト</td>
+                <td>ダウンタイム説明不足 【後悔】</td>
+                <td>劇的変化が見られない 【失望】</td>
+              </tr>
+              <tr>
+                <td><span class="platform-tag tag-tribeau">トリビュー</span></td>
+                <td>注入系</td>
+                <td>注入位置ミスによる左右差 【後悔】</td>
+                <td>機能面での違和感 【怒り】</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div style="margin-top:3rem;">
+          <h3 style="font-size:1.1rem; margin-bottom:1.5rem; font-family:var(--serif);">施術別の不満構造解剖</h3>
+          <div class="analysis-card" style="margin-bottom:1.5rem;">
+            <h4 style="margin-bottom:0.5rem; color:var(--accent-cyan);">ボトックス注射：技術とデザインの失敗</h4>
+            <p style="font-size:0.88rem;">解剖学的知識不足に基づく「機能障害（噛めない）」や「笑顔の引きつり」に不満が集中。注入後2週間でピークに達するため、数ヶ月続く苦痛が星1レビューに直結する。</p>
+          </div>
+          <div class="analysis-card">
+            <h4 style="margin-bottom:0.5rem; color:var(--accent-cyan);">シミ取り：診断ミスと期待値のズレ</h4>
+            <p style="font-size:0.88rem;">肝斑への不適切な照射による悪化が典型的な診断ミス。ダウンタイム期間やテープ保護の必要性に関する事前認識の甘さがクレームを誘発する。</p>
           </div>
         </div>
-        <div class="procedure-body">
-          <div class="procedure-body-inner">
-            「1ヶ月で元に戻った」「引きつれ感だけが残った」という効果の持続性の短さへのクレームが主。数十万円の高額治療であるため、カウンセリングでの「半永久的に持つ」「たるみが完全に消える」等のオーバートークが、強烈な反発と返金要求を生む。
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Section 5 -->
+    <section id="strategy">
+      <div class="reveal">
+        <div class="section-label">Section 05</div>
+        <h2 class="section-title">競合の弱点を自院の強みに反転させる施策</h2>
+        <div class="card-grid">
+          <div class="analysis-card">
+            <h3 style="color:var(--accent-cyan);">01. 待ち時間の撲滅</h3>
+            <p>ダブルブッキングの廃止とメニュー毎の正確な所要時間算出。LINEによる「現在の待ち時間目安」のリアルタイム通知。15分以上の遅延時のリカバリープラン（ドリンク提供等）を徹底する。</p>
+          </div>
+          <div class="analysis-card">
+            <h3 style="color:var(--accent-cyan);">02. 医療接遇の高度化</h3>
+            <p>不安を抱える患者の心理に寄り添った言葉遣いやトーンの研修。受付・電話応対のリアルなロールプレイの実施。カスハラ対応基準の策定によるスタッフの心理的負担の軽減。</p>
+          </div>
+          <div class="analysis-card">
+            <h3 style="color:var(--accent-cyan);">03. 透明な提案</h3>
+            <p>「ノー・アップセル宣言」の導入。見積もり提示後はスタッフが一度退室し、患者が冷静に検討できる「プレッシャーのない時間」を保証する。段階的注入プランによる失敗リスク最小化。</p>
           </div>
         </div>
       </div>
-    </div>
-  </div>
-</section>
+    </section>
 
-<!-- Section 5: Strategy -->
-<div class="divider"></div>
-<section id="strategy">
-  <div class="reveal">
-    <div class="section-label">Section 05 — Strategic Actions</div>
-    <h2 class="section-title">競合の弱点を自院の強みに反転させる4施策</h2>
-    <p class="section-desc">競合他院のネガティブ口コミから抽出された構造的弱点を、経営と現場の4つのレイヤーにおける具体的な改善施策とマーケティング訴求に転換する。</p>
-  </div>
+    <div class="divider"></div>
 
-  <div class="strategy-grid reveal">
-    <div class="strategy-card">
-      <div class="strategy-num">01</div>
-      <h3>運用改善 — 待ち時間の構造的解決</h3>
-      <p>ダブルブッキング廃止、施術メニューごとの所要時間精査とバッファ設定、LINEによる待ち時間リアルタイム通知、15分以上の遅延時のリカバリー対応マニュアル化。</p>
-      <div class="copy-examples">
-        <div class="copy-example">「お待たせしない完全予約制」</div>
+    <!-- Section 6 -->
+    <section id="dashboard">
+      <div class="reveal">
+        <div class="section-label">Section 06</div>
+        <h2 class="section-title">継続運用の仕組みと自動化ダッシュボード</h2>
+        <p class="section-desc">口コミデータは先行指標として定点観測する仕組みが必要である。法的制約を順守したデータパイプラインを構築する。</p>
+        
+        <div style="background:var(--bg-tertiary); padding:2.5rem; border-radius:12px; border:1px solid var(--border-accent);">
+          <h3 style="margin-bottom:1rem; color:var(--accent-cyan); font-family:var(--serif);">自動化パイプラインの構成</h3>
+          <ul style="font-size:0.88rem; color:var(--text-secondary); padding-left:1.5rem; line-height:2;">
+            <li><strong>データ取得:</strong> 適法なAPIまたはデータベンダーからの月次データ受領。</li>
+            <li><strong>自動処理:</strong> GCP/AWS環境でMeCab形態素解析と匿名化を自動実行。</li>
+            <li><strong>LLM判定:</strong> LLM APIを用いて感情極性とカテゴリ、緊急度を自動タグ付け。</li>
+            <li><strong>クリティカルアラート:</strong> 「消費者センター」「医療ミス」等のキーワード検出時に即座にSlack通知。</li>
+          </ul>
+        </div>
       </div>
-    </div>
-    <div class="strategy-card">
-      <div class="strategy-num">02</div>
-      <h3>接遇改善 — 医療接遇の高度化</h3>
-      <p>美容医療患者の心理に寄り添った言葉遣い・声のトーン・姿勢の研修。現場ロールプレイの導入。カスハラ対応基準の策定によるスタッフの心理的負担軽減。</p>
-      <div class="copy-examples">
-        <div class="copy-example">適正な人員配置とチームビルディングによる定着率向上</div>
-      </div>
-    </div>
-    <div class="strategy-card">
-      <div class="strategy-num">03</div>
-      <h3>カウンセリング改善 — 期待値のコントロール</h3>
-      <p>「ノー・アップセル宣言」の導入。見積もり提示後のプレッシャーフリー検討時間の確保。ボトックスの「段階的注入プラン」標準化（初回少なめ→2週間後無料リタッチ）。</p>
-      <div class="copy-examples">
-        <div class="copy-example">「無理な勧誘やローンの強要は一切行いません」</div>
-      </div>
-    </div>
-    <div class="strategy-card">
-      <div class="strategy-num">04</div>
-      <h3>広告訴求 — ネガをポジに反転させるLP</h3>
-      <p>競合への不満キーワードを逆手に取ったキャッチコピーでLP・SNS広告を展開し、乗り換え層を獲得する。</p>
-      <div class="copy-examples">
-        <div class="copy-example">「無表情にならない、オーダーメイド・ボトックス」</div>
-        <div class="copy-example">「そのシミ、本当にレーザーを当てて大丈夫ですか？」</div>
-      </div>
-    </div>
-  </div>
-</section>
+    </section>
 
-<!-- Section 6: Dashboard -->
-<div class="divider"></div>
-<section id="dashboard">
-  <div class="reveal">
-    <div class="section-label">Section 06 — Continuous Monitoring</div>
-    <h2 class="section-title">自動化ダッシュボードと継続運用</h2>
-    <p class="section-desc">口コミ分析を定点観測する仕組みを構築し、データパイプライン・BIダッシュボード・クリティカルアラートの3層で運用する。</p>
-  </div>
+    <!-- References -->
+    <section class="ref-section reveal">
+      <h2 style="font-size:1rem; margin-bottom:2rem; font-family:var(--mono); color:var(--text-muted);">引用文献</h2>
+      <ol class="ref-list">
+        <li><a href="https://stackoverflow.com/questions/69259594/google-place-api-limit-to-5-reviews">Google Place API limit to 5 reviews - Stack Overflow</a></li>
+        <li><a href="https://outscraper.com/limitless-google-business-reviews-api/">Google Business Reviews API That Not Limited to 5 Reviews - Outscraper</a></li>
+        <li><a href="https://featurable.com/blog/google-places-more-than-5-reviews">Google Places More Than 5 Reviews - Featurable</a></li>
+        <li><a href="https://livescraper.com/blog/how-to-scrape-all-google-reviews-in-2025-bypassing-the-5-review-limit/">How to Scrape All Google Reviews in 2025 - Livescraper</a></li>
+        <li><a href="https://stackoverflow.com/questions/79076577/google-places-api-unable-to-retrieve-more-than-5-reviews">Unable to Retrieve More Than 5 Reviews - Stack Overflow</a></li>
+        <li><a href="https://wiserreview.com/blog/google-maps-reviews-api/">Google Maps Reviews API Guide - WiserReview</a></li>
+        <li><a href="https://cloud.google.com/maps-platform/terms">Google Maps Platform Terms Of Service</a></li>
+        <li><a href="https://www.lobstr.io/blog/is-scraping-google-maps-legal">Is scraping legal on Google Maps? - Lobstr.io</a></li>
+        <li><a href="https://processwire.com/talk/topic/27953-strategies-for-including-google-places-reviews/">Strategies for including google reviews - ProcessWire</a></li>
+        <li><a href="https://cloud.google.com/maps-platform/terms/maps-service-terms">Google Maps Platform Service Specific Terms</a></li>
+        <li><a href="https://cdn.p.recruit.co.jp/terms/hpb-t-1002/index.html">口コミの掟 / HOT PEPPER Beauty</a></li>
+        <li><a href="https://scrap.io/scrape-google-gaps-legal">Is it allowed to scrape Google Maps? - Scrap.io</a></li>
+        <li><a href="https://scrap.io/google-maps-scraping-complete-guide-api-reviews-extraction">Google Maps Scraping Complete Guide - Scrap.io</a></li>
+        <li><a href="https://qiita.com/iwashi-kun/items/711f55587067ffcccf99">MeCabにComeJisyoを追加する - Qiita</a></li>
+        <li><a href="https://taku910.github.io/mecab/dic.html">MeCab: 単語の追加方法</a></li>
+        <li><a href="https://www.caa.go.jp/policies/policy/consumer_policy/information/information_002">美容医療を受ける前に確認したい事項 - 消費者庁</a></li>
+        <li><a href="https://resus.jp/topics/4382/">クリニック・医療系サロン向け接遇研修 - RESUS</a></li>
+        <li><a href="https://www.ginzabiyou.com/column/btx-failure/">ボトックス注射の失敗例 - 銀座よしえクリニック</a></li>
+        <li><a href="https://proteo.jp/column_erabotox-failure/">エラボトックスで失敗？ - メディカルアルファ</a></li>
+        <li><a href="https://s-beautyclinic.com/column/%E3%82%B7%E3%83%9F%E5%8F%96%E3%82%8A%E3%83%AC%E3%83%BC%E3%82%B6%E3%83%BC%E6%B2%BB%E7%99%82%E3%81%8C%E5%A4%B1%E6%95%97%E3%81%99%E3%82%8B%E3%81%AE%E3%81%AF%E3%81%A9%E3%82%93%E3%81%AA%E3%81%A8%E3%81%8D/">シミ取りレーザー治療が失敗するとき - S Beauty Clinic</a></li>
+      </ol>
+    </section>
+  </main>
 
-  <div class="pipeline reveal">
-    <div class="pipeline-card">
-      <div class="pipeline-step">Layer 01</div>
-      <h3>データパイプラインの自動化</h3>
-      <p>適法なAPI/データベンダーからの月次データ取得。GCP/AWSサーバーレス環境でMeCab形態素解析・固有名詞マスキングを自動実行し、BigQuery/Snowflakeに格納。</p>
-    </div>
-    <div class="pipeline-card">
-      <div class="pipeline-step">Layer 02</div>
-      <h3>LLMによる自動判定</h3>
-      <p>新着口コミをLLM APIで「感情極性」「カテゴリ」「緊急度（医療過誤・深刻クレームの兆候）」を自動推論し、メタデータとしてタグ付け。</p>
-    </div>
-    <div class="pipeline-card">
-      <div class="pipeline-step">Layer 03</div>
-      <h3>BIダッシュボード</h3>
-      <p>Looker Studio/Tableauで月次・週次のネガティブ口コミ件数・感情スコア推移・カテゴリ別ヒートマップ・競合ベンチマークを可視化。</p>
-    </div>
-  </div>
-
-  <div class="reveal" style="margin-top:2rem;">
-    <h3 style="font-family:var(--serif); font-size:1.1rem; margin-bottom:1rem;">主要KPIテンプレート</h3>
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <h4>感情スコア推移</h4>
-        <p>月次・週次ごとのネガティブ口コミ発生件数と「怒り」スコアの急上昇をトレンドグラフで監視</p>
-      </div>
-      <div class="kpi-card">
-        <h4>カテゴリ別ヒートマップ</h4>
-        <p>「今月第2週に待ち時間の不満が急増」といったオペレーション上の異常値を即座に視覚検知</p>
-      </div>
-      <div class="kpi-card">
-        <h4>競合ベンチマーク</h4>
-        <p>自院と主要競合のトピック別スコアをレーダーチャートで比較し、優位性と劣後領域を可視化</p>
-      </div>
-      <div class="kpi-card">
-        <h4>クリティカル・アラート</h4>
-        <p>「消費者センター」「裁判」「返金」「医療ミス」等の検出時にSlack/Teamsへ自動通知</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="reveal" style="margin-top:2.5rem;">
-    <div style="background:var(--bg-card); border:1px solid var(--border-accent); border-radius:12px; padding:2rem; max-width:800px;">
-      <h3 style="font-family:var(--serif); font-size:1.05rem; margin-bottom:0.8rem; color:var(--accent-cyan);">フィードバックループと組織文化</h3>
-      <p style="font-size:0.88rem; color:var(--text-secondary); line-height:1.8;">
-        ダッシュボードのインサイトは毎月の定例ミーティングで全従業員に共有する。ネガティブ口コミを特定スタッフの非難材料にすることは厳に慎み、「オペレーションの構造的無理」「説明フローの不足」を客観的に見直すデータとして扱う。競合他院の深刻事例も匿名化して「他山の石」として院内研修のケーススタディに組み込み、組織全体の継続的な品質向上を実現する。
-      </p>
-    </div>
-  </div>
-</section>
-
-<!-- References -->
-<div class="divider"></div>
-<div class="ref-section">
-  <details>
-    <summary>引用文献（全22件を表示）</summary>
-    <ol class="ref-list">
-      <li>Google Place API limit to 5 reviews — <a href="https://stackoverflow.com/questions/69259594/google-place-api-limit-to-5-reviews">Stack Overflow</a></li>
-      <li>Outscraper — <a href="https://outscraper.com/limitless-google-business-reviews-api/">Google Business Reviews API</a></li>
-      <li>Featurable — <a href="https://featurable.com/blog/google-places-more-than-5-reviews">Google Places More Than 5 Reviews</a></li>
-      <li>Outscraper — <a href="https://outscraper.com/limitless-google-business-reviews-api/">Google Business Reviews API Not Limited to 5</a></li>
-      <li>Livescraper — <a href="https://livescraper.com/blog/how-to-scrape-all-google-reviews-in-2025-bypassing-the-5-review-limit/">How to Scrape All Google Reviews</a></li>
-      <li>Stack Overflow — <a href="https://stackoverflow.com/questions/79076577/google-places-api-unable-to-retrieve-more-than-5-reviews">Unable to Retrieve More Than 5 Reviews</a></li>
-      <li>WiserReview — <a href="https://wiserreview.com/blog/google-maps-reviews-api/">Google Maps Reviews API</a></li>
-      <li>Google — <a href="https://cloud.google.com/maps-platform/terms">Maps Platform Terms Of Service</a></li>
-      <li>ProcessWire Forums — <a href="https://processwire.com/talk/topic/27953-strategies-for-including-google-places-reviews/">Strategies for Including Google Places Reviews</a></li>
-      <li>Lobstr.io — <a href="https://www.lobstr.io/blog/is-scraping-google-maps-legal">Is Scraping Legal on Google Maps?</a></li>
-      <li>ProcessWire Forums — <a href="https://processwire.com/talk/topic/27953-strategies-for-including-google-places-reviews/">Strategies for Including Google Places Reviews</a></li>
-      <li>Google — <a href="https://cloud.google.com/maps-platform/terms/maps-service-terms">Maps Platform Service Specific Terms</a></li>
-      <li>HOT PEPPER Beauty — <a href="https://cdn.p.recruit.co.jp/terms/hpb-t-1002/index.html">口コミの掟</a></li>
-      <li>Scrap.io — <a href="https://scrap.io/scrape-google-gaps-legal">Is It Allowed to Scrape Google Maps?</a></li>
-      <li>Scrap.io — <a href="https://scrap.io/google-maps-scraping-complete-guide-api-reviews-extraction">Google Maps Scraping Complete Guide</a></li>
-      <li>Qiita — <a href="https://qiita.com/iwashi-kun/items/711f55587067ffcccf99">UbuntuでMeCabにComeJisyoを追加する</a></li>
-      <li>MeCab — <a href="https://taku910.github.io/mecab/dic.html">単語の追加方法</a></li>
-      <li>消費者庁 — <a href="https://www.caa.go.jp/policies/policy/consumer_policy/information/information_002">美容医療を受ける前に確認したい事項</a></li>
-      <li>RESUS社会保険労務士事務所 — <a href="https://resus.jp/topics/4382/">クリニック向け接遇マナー研修</a></li>
-      <li>銀座よしえクリニック — <a href="https://www.ginzabiyou.com/column/btx-failure/">ボトックス注射の失敗例</a></li>
-      <li>メディカルアルファ — <a href="https://proteo.jp/column_erabotox-failure/">エラボトックスで失敗？</a></li>
-      <li>S Beauty Clinic — <a href="https://s-beautyclinic.com/column/%E3%82%B7%E3%83%9F%E5%8F%96%E3%82%8A%E3%83%AC%E3%83%BC%E3%82%B6%E3%83%BC%E6%B2%BB%E7%99%82%E3%81%8C%E5%A4%B1%E6%95%97%E3%81%99%E3%82%8B%E3%81%AE%E3%81%AF%E3%81%A9%E3%82%93%E3%81%AA%E3%81%A8%E3%81%8D/">シミ取りレーザー治療が失敗するとき</a></li>
-    </ol>
-  </details>
+  <aside class="sidebar-toc">
+    <ul class="toc-list">
+      <li><a href="#collection" class="toc-link">01. 収集設計</a></li>
+      <li><a href="#nlp" class="toc-link">02. NLP前処理</a></li>
+      <li><a href="#analysis" class="toc-link">03. 構造分析</a></li>
+      <li><a href="#ranking" class="toc-link">04. ネガ要因</a></li>
+      <li><a href="#strategy" class="toc-link">05. 改善施策</a></li>
+      <li><a href="#dashboard" class="toc-link">06. 運用体制</a></li>
+    </ul>
+  </aside>
 </div>
 
-<!-- Footer -->
 <footer>
-  <div class="footer-mono">NLP Review Analytics — Competitive Intelligence</div>
+  <div class="footer-mono">NLP Review Analytics — Competitive Intelligence Report 2026</div>
   <div class="footer-copy">美容クリニック競合他院ネガティブ口コミの構造解析と戦略的改善施策</div>
 </footer>
 
 <script>
-// Scroll reveal
+// Mobile Menu
+const menuToggle = document.getElementById('menuToggle');
+const navLinks = document.getElementById('navLinks');
+menuToggle.addEventListener('click', () => {
+  menuToggle.classList.toggle('open');
+  navLinks.classList.toggle('open');
+});
+
+// Scroll Reveal
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('visible');
-    }
+    if (entry.isIntersecting) entry.target.classList.add('visible');
   });
 }, { threshold: 0.1 });
-
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-// Accordion
-function toggleProcedure(header) {
-  const item = header.parentElement;
-  const body = item.querySelector('.procedure-body');
-  const isOpen = item.classList.contains('open');
-
-  document.querySelectorAll('.procedure-item').forEach(p => {
-    p.classList.remove('open');
-    p.querySelector('.procedure-body').style.maxHeight = null;
+// TOC Tracking
+const tocLinks = document.querySelectorAll('.toc-link');
+const sections = document.querySelectorAll('section');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(section => {
+    const sectionTop = section.offsetTop;
+    if (window.pageYOffset >= (sectionTop - 150)) {
+      current = section.getAttribute('id');
+    }
   });
-
-  if (!isOpen) {
-    item.classList.add('open');
-    body.style.maxHeight = body.scrollHeight + 'px';
-  }
-}
+  tocLinks.forEach(link => {
+    link.classList.remove('active');
+    if (link.getAttribute('href').includes(current)) link.classList.add('active');
+  });
+});
 </script>
 </body>
 </html>
